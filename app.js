@@ -3,11 +3,14 @@
 
     var color = d3.scale.category20();
 
-    Relation = function(source, target) {
+    Relation = function(source, target, type) {
         this.source = source;
         this.target = target;
+        this.type = type;
 
         // rendering attributes
+        this.width = 2;
+        this.color = color(1);
     };
 
     Entity = function(name, type) {
@@ -15,9 +18,10 @@
         this.type = type;
 
         // rendering attributes
-        this.fixed = true;
+        this.fixed = false;
         this.width = 40;
         this.height = 40;
+        this.color = color(2);
 
         this.getLabel = function() {
             return this.name;
@@ -35,7 +39,7 @@
             .attr("width", function (d) {return d.width;})
             .attr("height", function (d) {return d.height;})
             .attr("rx", 5).attr("ry", 5)
-            .style("fill", function (d) {return color(1);})
+            .style("fill", function (d) {return d.color;})
             .call(_cola.drag);
         label
             .data(entities)
@@ -53,7 +57,9 @@
             .data(relations)
             .enter()
             .append("line")
-            .attr("class", "relation");
+            .attr("class", function (d) {return "relation relation-" + d.type;})
+            .attr("stroke-width", function (d) {return d.width;})
+            .style("stroke", function (d) {return d.color;});
         _cola.start();
     };
 
@@ -63,10 +69,11 @@
         this.entities = [];
         this.relations = [];
 
+
         /* Canvas setup */
 
-        var width = 950;
-        var height = 500;
+        var width = 1240;
+        var height = 900;
 
         var _cola = cola.d3adaptor()
             .linkDistance(120)
@@ -111,7 +118,7 @@
         };
 
         this.addRelation = function(source, target) {
-            this.relations.push(new Relation(source, target));
+            this.relations.push(new Relation(source, target, "unknown"));
             if (svg !== undefined)
                 renderRelations(this.relations, svg, _cola);
         };
@@ -125,17 +132,10 @@
         };
 
         this.doFlowLayout = function() {
-            this.unlockEntities();
-            _cola.flowLayout("y"); // top-to-bottom
-            this.lockEntities();
+            _cola.flowLayout("y", 30) // top-to-bottom
+                .symmetricDiffLinkLengths(60)
+                .start();
         };
-
-        this.loadData = function() {
-            d3.json("data/rigs.json", function(error, json) {
-
-            });
-        };
-
     });
 
 })();
